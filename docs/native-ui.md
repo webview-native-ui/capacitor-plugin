@@ -47,7 +47,7 @@ await enableNativeUI({ stopScrollOnActivate: false });
 
 This cancels only the current fling; it does not lock scrolling or schedule a resume. The next user gesture starts a new scroll wherever the content is interactive. Overlays keep their own interaction rules, and closing one does not replay the cancelled fling. Android and Web fallback behavior are unchanged. Like other startup settings, changing this option requires destroying the running handle and starting a new one.
 
-Snapshot preparation also forwards this setting as `stopScrollBeforeCapture`. On Engine versions supporting that request flag, native contact stops momentum before fresh geometry measurement and pixel acquisition. Older Engine versions ignore the flag and retain their previous capture behavior; activation-time cancellation still applies. The matching Engine release and dependency update are required to enable the new capture ordering.
+Snapshot preparation uses the same setting with Engine 1.0.7. With the default `true`, idle snapshots wait for scrolling to settle; native-view contact stops momentum before fresh geometry measurement and pixel acquisition. Setting `false` disables both pre-capture stopping and activation-time stopping. Failed or stale captures retain the normal Web fallback.
 
 ### Navigation and native builds
 
