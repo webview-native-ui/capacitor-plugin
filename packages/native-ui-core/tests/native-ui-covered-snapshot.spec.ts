@@ -23,7 +23,7 @@ afterEach(async () => {
   document.body.replaceChildren();
 });
 const drain = () => vi.advanceTimersByTimeAsync(100);
-const fixture = async (modal?: HTMLIonModalElement) => {
+const fixture = async (modal?: HTMLIonModalElement, stopScrollBeforeCapture = false) => {
   const button = document.createElement('ion-button');
   (modal ?? document.body).append(button);
   const candidate = createCandidate(button, 'button', () => 'button');
@@ -45,6 +45,7 @@ const fixture = async (modal?: HTMLIonModalElement) => {
     return { remove: vi.fn().mockResolvedValue(undefined) };
   });
   const callbacks = {
+    stopScrollBeforeCapture,
     flush: vi.fn().mockResolvedValue(undefined),
     wake: vi.fn(),
     blocked: vi.fn(() => false),
@@ -801,3 +802,15 @@ for (const delta of [1.206512451171875, 80]) {
     expect(f.manager.token).toBeUndefined();
   });
 }
+
+test.each([false, true])('prepare forwards the configured capture ordering policy: %s', async (stop) => {
+  const f = await fixture(undefined, stop);
+  f.manager.consider(1, [f.candidate]);
+  await drain();
+  expect(f.bridge).toHaveBeenCalledWith(expect.objectContaining({ action: 'prepare', stopScrollBeforeCapture: stop }));
+  f.manager.begin();
+  await drain();
+  for (const [request] of f.bridge.mock.calls) {
+    if (request.action !== 'prepare') expect(request).not.toHaveProperty('stopScrollBeforeCapture');
+  }
+});

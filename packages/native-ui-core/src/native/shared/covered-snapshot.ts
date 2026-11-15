@@ -8,7 +8,13 @@ export const createCoveredSnapshots = async (
   doc: Document,
   plugin: NativeUIPlugin,
   listen: NativeUIPlugin['addListener'],
-  callbacks: { wake: () => void; blocked: () => boolean; modal?: HTMLIonModalElement; revision?: () => number },
+  callbacks: {
+    wake: () => void;
+    blocked: () => boolean;
+    modal?: HTMLIonModalElement;
+    revision?: () => number;
+    stopScrollBeforeCapture?: boolean;
+  },
 ) => {
   const state = getProjectionState(doc);
   let latestSources: WebProjectionSource[] = [];
@@ -20,7 +26,17 @@ export const createCoveredSnapshots = async (
   }
   const projection = await createWebProjectionSurface(
     {
-      send: (request) => plugin.coveredSnapshot!(modal && request.action === 'prepare' ? { ...request, captureMode: 'view' } : request),
+      send: (request) => {
+        const configured =
+          request.action === 'prepare'
+            ? {
+                ...request,
+                stopScrollBeforeCapture: callbacks.stopScrollBeforeCapture === true,
+                ...(modal ? { captureMode: 'view' as const } : {}),
+              }
+            : request;
+        return plugin.coveredSnapshot!(configured);
+      },
       listen: (listener) => listen('snapshotInteraction', listener),
     },
     {

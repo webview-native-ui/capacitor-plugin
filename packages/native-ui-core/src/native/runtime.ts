@@ -1731,6 +1731,7 @@ export const createRuntime = async (
   if (options.coveredSnapshots && plugin.coveredSnapshot) {
     try {
       const shared = {
+        stopScrollBeforeCapture: options.stopScrollOnActivate !== false,
         wake: () => {
           schedule();
           win.dispatchEvent(new Event(sourcesChangedEvent));
