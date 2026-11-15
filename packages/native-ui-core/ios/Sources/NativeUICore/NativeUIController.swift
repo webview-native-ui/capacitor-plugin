@@ -10,7 +10,14 @@ public final class NativeUIController: NSObject, UITabBarDelegate {
         self.environment = environment
         super.init()
     }
-    private func notifyListeners(_ event: String, data: [String: Any]) { environment.emit(event, data) }
+    private func notifyListeners(_ event: String, data: [String: Any]) {
+        // Cancel this fling before Web handles any native activation, including
+        // extension actions. The next user gesture works without a resume step.
+        if event == "activate", stopScrollOnActivate, let webView = environment.webView() {
+            stopMomentum(in: webView)
+        }
+        environment.emit(event, data)
+    }
     private func hasListeners(_ event: String) -> Bool { environment.hasListeners(event) }
     private let coveredSnapshots = NativeUICoveredSnapshots()
     private var snapshotControls: [NativeUIControl] = []
@@ -27,6 +34,7 @@ public final class NativeUIController: NSObject, UITabBarDelegate {
     private let extensionActions = NativeUIExtensionActions()
     private var fingerprints: [String: NativeUIControl] = [:]
     private let rendering = NativeUIControlRendering()
+    private var stopScrollOnActivate = true
     private var configurationGeneration = 0
     private var connectionSession = UUID().uuidString
     private var modalAnimationID: Int?
@@ -211,6 +219,7 @@ public final class NativeUIController: NSObject, UITabBarDelegate {
                 // A new JS context starts revision numbering again (live reload / navigation).
                 self.restoreTopEdge?()
                 self.restoreTopEdge = nil
+                self.stopScrollOnActivate = call.getBool("stopScrollOnActivate") ?? true
                 self.resetCoveredSnapshots()
                 self.removeControls()
                 NativeUICoveredSnapshots.experimentalInPlaceFilteringEnabled = call.getBool("experimentalInPlaceFilteringEnabled") ?? true
@@ -808,6 +817,15 @@ public final class NativeUIController: NSObject, UITabBarDelegate {
         notifyListeners("search", data: ["id": id, "phase": phase.rawValue, "value": value,
             "composing": composing, "valueVersion": valueVersion, "sequence": sequence, "revision": revision])
         return sequence
+    }
+
+    private func stopMomentum(in view: UIView) {
+        if let scrollView = view as? UIScrollView {
+            scrollView.setContentOffset(scrollView.contentOffset, animated: false)
+        }
+        for subview in view.subviews {
+            stopMomentum(in: subview)
+        }
     }
 
     private func activate(_ id: String) {

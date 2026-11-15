@@ -52,6 +52,10 @@ export interface NativeUIOptions {
    */
   extensions?: readonly NativeUIExtension[];
   ionic?: IonicProjectionOptions;
+  /** iOS: stop WebView momentum before native control actions. Defaults to true.
+   * Only the current momentum is cancelled; the next user scroll works normally.
+   */
+  stopScrollOnActivate?: boolean;
   /** iOS 26+: use the experimental private-API Glass capture workaround. Defaults to true.
    * Process-wide native setting. Disabling execution does not remove private API code from the binary.
    */
@@ -294,7 +298,11 @@ export interface CoveredSnapshot {
 }
 
 export interface NativeUIPlugin {
-  configure(options?: { suppressScrollEdgeEffect?: boolean; experimentalInPlaceFilteringEnabled?: boolean }): Promise<{
+  configure(options?: {
+    suppressScrollEdgeEffect?: boolean;
+    stopScrollOnActivate?: boolean;
+    experimentalInPlaceFilteringEnabled?: boolean;
+  }): Promise<{
     supported: boolean;
     extensions?: string[];
     modalAnimation?: boolean;

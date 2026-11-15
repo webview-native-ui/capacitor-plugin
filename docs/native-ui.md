@@ -37,6 +37,16 @@ import { configureNativeTransition } from '@rdlabo/capacitor-native-ui';
 await configureNativeTransition();
 ```
 
+### Scroll momentum on iOS
+
+Native control actions stop the current WebView momentum scroll by default, including scrolling inside `ion-content`. To preserve momentum when a native control is activated:
+
+```ts
+await enableNativeUI({ stopScrollOnActivate: false });
+```
+
+This cancels only the current fling; it does not lock scrolling or schedule a resume. The next user gesture starts a new scroll wherever the content is interactive. Overlays keep their own interaction rules, and closing one does not replay the cancelled fling. Android and Web fallback behavior are unchanged. Like other startup settings, changing this option requires destroying the running handle and starting a new one.
+
 ### Navigation and native builds
 
 | Setup                               | Action                                                                                                                                      |
