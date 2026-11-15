@@ -180,6 +180,7 @@ export const enableNativeUI = (options: NativeUIRuntimeOptions = {}, overlayFact
   const configuration = JSON.stringify([
     options.source ?? 'ionic',
     options.debug === true,
+    options.stopScrollOnActivate !== false,
     options.experimentalInPlaceFilteringEnabled !== false,
     options.ionic?.auto !== false,
     options.verticalBars?.enabled !== false,
@@ -298,6 +299,7 @@ export const enableNativeUI = (options: NativeUIRuntimeOptions = {}, overlayFact
         const capabilities = await bounded(
           plugin.configure({
             suppressScrollEdgeEffect: ordinaryControls,
+            stopScrollOnActivate: options.stopScrollOnActivate !== false,
             experimentalInPlaceFilteringEnabled: options.experimentalInPlaceFilteringEnabled ?? true,
           }),
         );
