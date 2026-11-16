@@ -583,14 +583,14 @@ final class NativeUIVerticalBarsController: NativeUIVerticalBarsControlling {
         // Reuse the same transparency policy at the inner content layout boundary.
         model.layoutSurfaces = { [weak self] in
             self?.controller.layoutSurfaces()
-            self?.applyToolbarBadgeColors()
+            self?.applyToolbarBadgeAppearance()
         }
         container.backgroundColor = .clear
         controller.view.backgroundColor = .clear
         controller.view.isOpaque = false
         controller.layoutSearch = { [weak self] in self?.model.search?.configureField() }
         controller.layoutTabs = { [weak self] in self?.applyTabTint() }
-        controller.layoutBadges = { [weak self] in self?.applyToolbarBadgeColors() }
+        controller.layoutBadges = { [weak self] in self?.applyToolbarBadgeAppearance() }
     }
 
     private var toolbarLayoutGeneration = 0
@@ -630,18 +630,19 @@ final class NativeUIVerticalBarsController: NativeUIVerticalBarsControlling {
     private weak var tintedTabBar: UITabBar?
     private var appliedTabTint: String?
 
-    private func applyToolbarBadgeColors() {
+    private func applyToolbarBadgeAppearance() {
         MainActor.assumeIsolated {
-            let badges = Dictionary(model.groups.flatMap(\.items).compactMap { item in
-                item.badge.map { (item.transitionID, $0) }
-            }, uniquingKeysWith: { _, latest in latest })
+            let itemsByID = Dictionary(model.groups.flatMap(\.items).map { ($0.transitionID, $0) },
+                uniquingKeysWith: { _, latest in latest })
             @MainActor func apply(in controller: UIViewController) {
                 let items = (controller as? UINavigationController)?.navigationBar.items ?? []
                 let buttons = items.flatMap {
                     ($0.leadingItemGroups + $0.centerItemGroups + $0.trailingItemGroups).flatMap(\.barButtonItems)
                 } + (controller.toolbarItems ?? [])
                 for button in buttons {
-                    guard let id = button.identifier, let source = badges[id], var badge = button.badge else { continue }
+                    guard let id = button.identifier, let item = itemsByID[id] else { continue }
+                    button.accessibilityValue = item.badge?.value
+                    guard let source = item.badge, var badge = button.badge else { continue }
                     let background = NativeUIRendering.color(source.color)
                     let foreground = NativeUIRendering.color(source.textColor)
                     // Setting an unchanged badge schedules another UIKit layout pass.
@@ -717,6 +718,7 @@ final class NativeUIVerticalBarsController: NativeUIVerticalBarsControlling {
             }
         }
         controller.overrideUserInterfaceStyle = controls.contains(where: \.dark) ? .dark : .light
+        applyToolbarBadgeAppearance()
     }
 
     func presentPopover(anchor: String, host: NativeUIOverlayHost, completion: @escaping (Bool) -> Void) -> Bool {
