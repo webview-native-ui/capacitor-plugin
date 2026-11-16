@@ -148,6 +148,8 @@ private struct NativeUIVerticalBarsLabel: View {
 @ViewBuilder
 private func verticalBarsButton(_ item: NativeUIVerticalBarsModel.Item, model: NativeUIVerticalBarsModel) -> some View {
     let button = Button { model.activate(item.id) } label: { NativeUIVerticalBarsLabel(item: item) }
+        .modifier(NativeUIVerticalBarsBadge(badge: item.badge))
+        .accessibilityValue(item.badge?.value ?? "")
         .disabled(item.disabled)
         .accessibilityLabel(item.accessibilityLabel)
         .accessibilityIdentifier(item.isBack ? "BackButton" : item.id)
@@ -453,12 +455,14 @@ final class NativeUIVerticalBarsController: NativeUIVerticalBarsControlling {
         var railEdge = "right"
         var layoutSearch: (() -> Void)?
         var layoutTabs: (() -> Void)?
+        var layoutBadges: (() -> Void)?
         var layoutToolbar: (() -> Void)?
         override func viewDidLayoutSubviews() {
             super.viewDidLayoutSubviews()
             layoutSurfaces()
             layoutSearch?()
             layoutTabs?()
+            layoutBadges?()
             layoutToolbar?()
         }
 
@@ -577,12 +581,16 @@ final class NativeUIVerticalBarsController: NativeUIVerticalBarsControlling {
         model.activate = activate
         // UIKit can materialize tab/navigation backings after the hosting layout.
         // Reuse the same transparency policy at the inner content layout boundary.
-        model.layoutSurfaces = { [weak self] in self?.controller.layoutSurfaces() }
+        model.layoutSurfaces = { [weak self] in
+            self?.controller.layoutSurfaces()
+            self?.applyToolbarBadgeColors()
+        }
         container.backgroundColor = .clear
         controller.view.backgroundColor = .clear
         controller.view.isOpaque = false
         controller.layoutSearch = { [weak self] in self?.model.search?.configureField() }
         controller.layoutTabs = { [weak self] in self?.applyTabTint() }
+        controller.layoutBadges = { [weak self] in self?.applyToolbarBadgeColors() }
     }
 
     private var toolbarLayoutGeneration = 0
@@ -621,6 +629,32 @@ final class NativeUIVerticalBarsController: NativeUIVerticalBarsControlling {
 
     private weak var tintedTabBar: UITabBar?
     private var appliedTabTint: String?
+
+    private func applyToolbarBadgeColors() {
+        MainActor.assumeIsolated {
+            let badges = Dictionary(model.groups.flatMap(\.items).compactMap { item in
+                item.badge.map { (item.transitionID, $0) }
+            }, uniquingKeysWith: { _, latest in latest })
+            @MainActor func apply(in controller: UIViewController) {
+                let items = (controller as? UINavigationController)?.navigationBar.items ?? []
+                let buttons = items.flatMap {
+                    ($0.leadingItemGroups + $0.centerItemGroups + $0.trailingItemGroups).flatMap(\.barButtonItems)
+                } + (controller.toolbarItems ?? [])
+                for button in buttons {
+                    guard let id = button.identifier, let source = badges[id], var badge = button.badge else { continue }
+                    let background = NativeUIRendering.color(source.color)
+                    let foreground = NativeUIRendering.color(source.textColor)
+                    // Setting an unchanged badge schedules another UIKit layout pass.
+                    guard badge.backgroundColor != background || badge.foregroundColor != foreground else { continue }
+                    badge.backgroundColor = background
+                    badge.foregroundColor = foreground
+                    button.badge = badge
+                }
+                controller.children.forEach(apply)
+            }
+            apply(in: controller)
+        }
+    }
 
     private func applyTabTint() {
         let tint = model.tabTint.map { NativeUIRendering.color($0) }
