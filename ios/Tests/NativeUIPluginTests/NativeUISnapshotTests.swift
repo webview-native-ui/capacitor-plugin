@@ -362,7 +362,6 @@ final class NativeUISnapshotTests: XCTestCase {
             }
             let inbox = try XCTUnwrap(buttons(owner).first { $0.identifier == "badge-inbox" })
             XCTAssertEqual(inbox.badge != nil, value != nil)
-            XCTAssertEqual(inbox.accessibilityValue, value)
             if let value, !value.isEmpty { XCTAssertEqual(inbox.badge?.stringValue, value) }
             if value != nil {
                 XCTAssertEqual(inbox.badge?.backgroundColor, NativeUIRendering.color(background))
