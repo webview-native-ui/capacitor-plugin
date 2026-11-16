@@ -1679,3 +1679,61 @@ test('accepted sources remain capturable while list recycling leaves another upd
     release?.();
   }
 });
+
+test('completing an acquisition fade retires the intermediate capture before later overlays', async () => {
+  const { source, options } = mount();
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+  vi.spyOn(window, 'matchMedia').mockReturnValue({
+    matches: false,
+    addEventListener() {},
+    removeEventListener() {},
+  } as unknown as MediaQueryList);
+  let finish!: () => void;
+  const finished = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  source.animate = vi.fn(() => ({ finished, cancel: vi.fn() }) as unknown as Animation);
+  const consider = vi.fn();
+  const changed = vi.fn();
+  const surface = {
+    owners: [],
+    visibleOwners: [],
+    preparedOwners: [],
+    restoring: false,
+    handoffPending: false,
+    invalidate() {},
+    changed,
+    moved() {},
+    end() {},
+    begin() {},
+    consider,
+    updated() {},
+    destroy: async () => {},
+  } as unknown as snapshotsModule.CoveredSnapshots;
+  vi.spyOn(snapshotsModule, 'createCoveredSnapshots').mockResolvedValue(surface);
+  const plugin = {
+    addListener: async () => ({ remove: async () => {} }),
+    coveredSnapshot: async () => ({}),
+    update: async (snapshot: NativeUISnapshot) => ({ revision: snapshot.revision }),
+    clear: async () => {},
+  } as unknown as NativeUIPlugin;
+  handles.push(await createRuntime(document, plugin, { ...options, coveredSnapshots: true }));
+  try {
+    await vi.waitFor(() => expect(consider).toHaveBeenCalled());
+    expect(source.hasAttribute('data-native-ui-fading')).toBe(true);
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    changed.mockClear();
+    finish();
+    await vi.waitFor(() => expect(source.hasAttribute('data-native-ui-fading')).toBe(false));
+    expect(changed).toHaveBeenCalled();
+  } finally {
+    finish();
+  }
+});

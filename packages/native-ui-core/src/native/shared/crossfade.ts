@@ -2,7 +2,7 @@ export const handoffDuration = 180;
 export const fadeMarker = 'data-native-ui-fading';
 
 /** Only visual opacity animates; the runtime transfers input/accessibility ownership once. */
-export const createCrossfade = (win: Window) => {
+export const createCrossfade = (win: Window, changed: () => void = () => {}) => {
   const active = new Map<HTMLElement, Animation>();
   const retired = new Set<HTMLElement>();
   const reduced = win.matchMedia('(prefers-reduced-motion: reduce)');
@@ -12,6 +12,8 @@ export const createCrossfade = (win: Window) => {
     element.removeAttribute(fadeMarker);
     animation.cancel();
     if (retired.delete(element)) element.remove();
+    // WAAPI completion changes pixels without a source DOM mutation.
+    changed();
   };
   const cancelAll = () => {
     for (const [element, animation] of active) finish(element, animation);

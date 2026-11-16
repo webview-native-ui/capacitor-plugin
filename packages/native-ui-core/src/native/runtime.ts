@@ -113,7 +113,7 @@ export const createRuntime = async (
     ...extensions.map((extension) => extension.selector),
   ].join(', ');
   const icons = createIconRenderer();
-  const crossfade = createCrossfade(win);
+  const crossfade = createCrossfade(win, () => projectionSurfaces.changed());
   const projectionSurfaces = createWebProjectionSurfaces<Document | HTMLIonModalElement, CoveredSnapshots>({
     ignoreTarget: (target) => !!target.closest('.ion-cloned-element, [data-native-ui-proxy]'),
   });
