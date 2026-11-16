@@ -77,7 +77,7 @@ export const appendItem = (
   const labelElement = content.querySelector('[part="text"], ion-label') ?? child;
   const native = child.shadowRoot?.querySelector('[part="native"]');
   const labelStyle = getComputedStyle(labelElement);
-  const badge = child.querySelector<HTMLElement>('ion-badge');
+  const badge = child.querySelector<HTMLElement>(child.matches('ion-button') ? ':scope > ion-badge' : 'ion-badge');
   // Rail actions and tabs are placed independently of their Web coordinates.
   const badgeStyle = badge && visible(badge, isVerticalBarsSource(candidate.element)) ? getComputedStyle(badge) : undefined;
   const sourceFill = (child as HTMLIonButtonElement).fill;
