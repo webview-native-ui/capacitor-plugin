@@ -1164,6 +1164,10 @@ export const createRuntime = async (
           (!candidate.scrollElement || !unconfirmedScroll.has(candidate.scrollElement)) &&
           candidateSources(candidate).some((source) => nativeOwners.has(source)),
       );
+      // A virtual list may keep the update queue dirty throughout momentum.
+      // Captures must follow the acknowledged native revision without waiting
+      // for the unrelated background DOM to become quiet after a tab change.
+      if (!navigation.current && !verticalGesture) projectionSurfaces.consider(acceptedRevision, acknowledged);
       scrollBindings.acknowledge(acknowledged, snapshot.viewportWidth);
       const discovered = Array.from(scope.querySelectorAll<HTMLElement>(discovery));
       nativeScrollOwners = new Set(

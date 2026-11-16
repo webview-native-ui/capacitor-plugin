@@ -1611,3 +1611,71 @@ test.each(['reject', 'mismatched-revision'] as const)('obsolete %s cannot clear 
   await vi.waitFor(() => expect(snapshots.at(-1)?.controls[0]?.items[0]?.accessibilityLabel).toBe('Latest'));
   expect(clear).not.toHaveBeenCalled();
 });
+
+test('accepted sources remain capturable while list recycling leaves another update pending', async () => {
+  const { source, options } = mount();
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+  vi.spyOn(window, 'matchMedia').mockReturnValue({
+    matches: true,
+    addEventListener() {},
+    removeEventListener() {},
+  } as unknown as MediaQueryList);
+  const consider = vi.fn();
+  const surface = {
+    owners: [],
+    visibleOwners: [],
+    preparedOwners: [],
+    restoring: false,
+    handoffPending: false,
+    invalidate() {},
+    changed() {},
+    moved() {},
+    end() {},
+    begin() {},
+    consider,
+    updated() {},
+    destroy: async () => {},
+  } as unknown as snapshotsModule.CoveredSnapshots;
+  vi.spyOn(snapshotsModule, 'createCoveredSnapshots').mockResolvedValue(surface);
+  let recycle = false;
+  let acceptedRevision: number | undefined;
+  let release: (() => void) | undefined;
+  const plugin = {
+    addListener: async () => ({ remove: async () => {} }),
+    coveredSnapshot: async () => ({}),
+    update: async (snapshot: NativeUISnapshot) => {
+      if (recycle) {
+        if (acceptedRevision === undefined) {
+          acceptedRevision = snapshot.revision;
+          source.textContent = 'Recycled again';
+          await Promise.resolve();
+        } else
+          await new Promise<void>((resolve) => {
+            release = resolve;
+          });
+      }
+      return { revision: snapshot.revision };
+    },
+    clear: async () => {},
+  } as unknown as NativeUIPlugin;
+  const runtime = await createRuntime(document, plugin, { ...options, coveredSnapshots: true });
+  handles.push(runtime);
+  await vi.waitFor(() => expect(consider).toHaveBeenCalled());
+  consider.mockClear();
+  recycle = true;
+  source.textContent = 'New tab action';
+  try {
+    await vi.waitFor(() => expect(release).toBeDefined());
+    expect(consider.mock.calls.some(([revision]) => revision === acceptedRevision)).toBe(true);
+  } finally {
+    recycle = false;
+    release?.();
+  }
+});
