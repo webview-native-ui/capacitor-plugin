@@ -317,6 +317,68 @@ final class NativeUISnapshotTests: XCTestCase {
         XCTAssertEqual(model.groups.first?.items.first?.transitionID, "legacy")
     }
 
+    @MainActor func testSwiftUIToolbarBadgeUpdatesAndRemoval() async throws {
+        guard UIApplication.shared.delegate != nil else { throw XCTSkip("Requires hosted UIApplication") }
+        guard #available(iOS 26.0, *) else { throw XCTSkip("Requires native toolbar badges") }
+        let owner = UIViewController()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        window.frame = scene.coordinateSpace.bounds
+        owner.view.backgroundColor = .systemBackground
+        window.rootViewController = owner
+        window.makeKeyAndVisible()
+        let rail = NativeUIVerticalBarsController(activate: { _ in }, changed: { _, _, _, _, _ in 0 })
+        rail.attach(to: owner, in: owner.view)
+        defer { rail.detach(); window.isHidden = true }
+        func buttons(_ vc: UIViewController) -> [UIBarButtonItem] {
+            let own = (vc as? UINavigationController)?.navigationBar.items?.flatMap {
+                ($0.leadingItemGroups + $0.centerItemGroups + $0.trailingItemGroups).flatMap(\.barButtonItems)
+            } ?? []
+            return own + vc.children.flatMap(buttons)
+        }
+        let image = UIImage(systemName: "ellipsis")!.pngData()!.base64EncodedString()
+        for (value, background, foreground) in [("3", "rgb(0, 84, 233)", "rgb(255, 255, 255)"),
+            ("3", "rgb(45, 211, 111)", "rgb(0, 0, 0)"),
+            ("99+", "rgb(0, 84, 233)", "rgb(255, 255, 255)"),
+            ("", "rgb(0, 84, 233)", "rgb(255, 255, 255)"),
+            (nil, "rgb(0, 84, 233)", "rgb(255, 255, 255)")] as [(String?, String, String)] {
+            var inboxItem = item(["id": "inbox", "label": "Inbox", "transitionId": "badge-inbox",
+                "icon": image, "iconWidth": 24.0, "iconHeight": 24.0, "iconTemplate": true])
+            if let value {
+                inboxItem["badge"] = ["value": value, "color": background, "textColor": foreground]
+            }
+            let settingsItem = item(["id": "settings", "label": "Settings", "transitionId": "badge-settings",
+                "icon": image, "iconWidth": 24.0, "iconHeight": 24.0, "iconTemplate": true])
+            let group = control(["kind": "button-group", "placement": "vertical-bars",
+                "transitionId": "badge-group", "items": [inboxItem, settingsItem]])
+            let nodes = try decode([group]).controls
+            rail.apply(nodes, rendering: NativeUIControlRendering(), edge: "right", animated: false)
+            for _ in 0..<40 {
+                owner.view.layoutIfNeeded()
+                if let inbox = buttons(owner).first(where: { $0.identifier == "badge-inbox" }),
+                   (value == nil ? inbox.badge == nil : inbox.badge != nil),
+                   value == nil || value == "" || inbox.badge?.stringValue == value { break }
+                try await Task.sleep(nanoseconds: 50_000_000)
+            }
+            let inbox = try XCTUnwrap(buttons(owner).first { $0.identifier == "badge-inbox" })
+            XCTAssertEqual(inbox.badge != nil, value != nil)
+            if let value, !value.isEmpty { XCTAssertEqual(inbox.badge?.stringValue, value) }
+            if value != nil {
+                XCTAssertEqual(inbox.badge?.backgroundColor, NativeUIRendering.color(background))
+                XCTAssertEqual(inbox.badge?.foregroundColor, NativeUIRendering.color(foreground))
+            }
+            XCTAssertNil(buttons(owner).first { $0.identifier == "badge-settings" }?.badge)
+            try await Task.sleep(nanoseconds: 300_000_000)
+            let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+                XCTAssertTrue(window.drawHierarchy(in: window.bounds, afterScreenUpdates: true))
+            }
+            let attachment = XCTAttachment(image: image)
+            attachment.name = "toolbar-badge-\(value.map { $0.isEmpty ? "dot" : $0 } ?? "removed")-\(background)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+    }
+
     @MainActor func testSwiftUIToolbarForwardsTransitionIdentifier() async throws {
         guard #available(iOS 26.0, *) else { throw XCTSkip("Requires SwiftUI toolbar") }
         let owner = UIViewController()

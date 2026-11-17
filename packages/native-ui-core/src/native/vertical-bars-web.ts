@@ -272,6 +272,7 @@ export const createVerticalBarsWebProjection = (
     alignVerticalBarClone(target, original, surface);
   };
   const actionContents = new WeakMap<HTMLElement, string>();
+  const actionBadges = new WeakMap<HTMLElement, string>();
   const syncAction = (target: HTMLElement, original: HTMLElement) => {
     copyAttributes(target, original);
     target.classList.add('ios-theme-vertical-bars-toolbar-action', 'ion-cloned-element');
@@ -283,12 +284,51 @@ export const createVerticalBarsWebProjection = (
     if ('disabled' in original) (target as HTMLIonButtonElement).disabled = (original as HTMLIonButtonElement).disabled;
     if (original.matches('ion-button')) {
       const icon = original.querySelector<HTMLElement>('ion-icon, svg');
-      const text = original.textContent?.trim() || label || '';
+      const badge = original.querySelector<HTMLElement>(':scope > ion-badge');
+      const text =
+        Array.from(original.childNodes)
+          .filter((node) => node !== badge)
+          .map((node) => node.textContent ?? '')
+          .join('')
+          .trim() ||
+        label ||
+        '';
+      // Source hiding belongs to projection ownership, not the badge's own visibility.
+      const badgeStyle = badge
+        ? unprojected(projectedSources(), () =>
+            withoutPrehide(badge, () => {
+              const style = win.getComputedStyle(badge);
+              return {
+                backgroundColor: style.backgroundColor,
+                color: style.color,
+                display: style.display,
+                visibility: style.visibility,
+                opacity: style.opacity,
+                overlay: style.position === 'absolute',
+              };
+            }),
+          )
+        : undefined;
       const content = icon ? `icon:${icon.outerHTML}` : `text:${text}`;
-      if (actionContents.get(target) === content) return;
-      const clonedIcon = icon?.cloneNode(true) as HTMLElement | undefined;
-      clonedIcon?.setAttribute('slot', 'icon-only');
-      target.replaceChildren(...(clonedIcon ? [clonedIcon] : [document.createTextNode(text)]));
+      const badgeContent = JSON.stringify([badge?.outerHTML, badgeStyle]);
+      const changedContent = actionContents.get(target) !== content;
+      if (changedContent) {
+        const clonedIcon = icon?.cloneNode(true) as HTMLElement | undefined;
+        clonedIcon?.setAttribute('slot', 'icon-only');
+        target.replaceChildren(...(clonedIcon ? [clonedIcon] : [document.createTextNode(text)]));
+      }
+      if (changedContent || actionBadges.get(target) !== badgeContent) {
+        target.querySelector(':scope > ion-badge')?.remove();
+        const clonedBadge = badge?.cloneNode(true) as HTMLElement | undefined;
+        if (clonedBadge && badgeStyle) {
+          clonedBadge.removeAttribute('id');
+          clonedBadge.toggleAttribute('data-native-ui-badge-overlay', badgeStyle.overlay);
+          const { overlay, ...style } = badgeStyle;
+          Object.assign(clonedBadge.style, style);
+          target.append(clonedBadge);
+        }
+        actionBadges.set(target, badgeContent);
+      }
       actionContents.set(target, content);
     }
   };
