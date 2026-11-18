@@ -1,10 +1,12 @@
 ---
-title: Android dynamic colors
+title: Android Dynamic Color
 ---
 
-# Android dynamic colors
+# Android Dynamic Color
 
-Dynamic colors are a supported, opt-in API. Read the device's Material You palette
+<a id="android-dynamic-colors"></a>
+
+Android Dynamic Color is an opt-in API. Read the device's Material You palette
 without enabling Native UI projection, changing the Activity theme, or requesting
 wallpaper/storage permissions. Ionic is not required to read colors. App-local
 SwiftUI/Compose extensions remain experimental; their status is separate.
