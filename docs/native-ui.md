@@ -131,7 +131,7 @@ The table below describes the ordinary Native UI. Vertical Bars uses the separat
 
 | Ionic component                               | Supported appearance and placement                                                                        | Native rendering                                                      |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `ion-button`                                  | Fixed toolbar: default, clear in ungrouped `ion-buttons`, or solid: `type="submit"` or `.button-submit`   | Glass `UIButton`, prominent for solid submit actions                  |
+| `ion-button`                                  | Fixed toolbar: default, clear in ungrouped `ion-buttons`, or solid: `type="submit"` or `.button-submit`   | Glass `UIButton`, prominent for solid submit buttons                  |
 | `ion-buttons`                                 | Fixed toolbar, two or more direct clear `ion-button` / `ion-menu-button` children sharing the theme glass | One `UIGlassEffect` surface with independent native buttons           |
 | `ion-back-button`                             | Standard icon and color in a fixed header/footer toolbar                                                  | Glass `UIButton`, using the resolved Ionic label/icon                 |
 | `ion-menu-button`                             | Fixed toolbar, inside the theme glass `ion-buttons`                                                       | Glass `UIButton`; original Ionic menu toggle                          |
@@ -139,7 +139,7 @@ The table below describes the ordinary Native UI. Vertical Bars uses the separat
 | `ion-segment`                                 | Fixed toolbar, non-scrollable, text **or** one icon per item                                              | `UISegmentedControl`                                                  |
 | `ion-fab` / `ion-fab-button` / `ion-fab-list` | Glass FAB in an `ion-content` fixed slot; one main button and optional directional lists                  | Persistent glass `UIButton` per button; one FAB synchronization group |
 
-Solid submit actions (`fill="solid"` with `type="submit"` or `.button-submit`) also support Ionic `color`, such as `color="primary"`. Their prominent glass tint comes from the resolved Web background color. In a mixed `ion-buttons` container, they project individually rather than joining a shared glass surface. The existing color restriction for other individually projected horizontal `ion-button` actions remains unchanged.
+Solid submit buttons (`fill="solid"` with `type="submit"` or `.button-submit`) also support Ionic `color`, such as `color="primary"`. Their prominent glass tint comes from the resolved Web background color. In a mixed `ion-buttons` container, they project individually rather than joining a shared glass surface. The existing color restriction for other individually projected horizontal `ion-button` actions remains unchanged.
 
 For the ordinary Native UI, only supported iOS-mode components are eligible. Theme variables are not required; calling `enableNativeUI()` opts into native projection. Explicitly enabled Vertical Bars is mode-independent as described below. `ios-theme-disabled` and the legacy `ios26-disabled` on an element or ancestor always exclude it. A disabled theme on one tab/segment item keeps its whole group on the Web.
 
