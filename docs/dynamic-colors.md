@@ -2,9 +2,9 @@
 title: Android Dynamic Color
 ---
 
-<a id="android-dynamic-colors"></a>
-
 # Android Dynamic Color
+
+<a id="android-dynamic-colors"></a>
 
 Android Dynamic Color is an opt-in API. Read the device's Material You palette
 without enabling Native UI projection, changing the Activity theme, or requesting

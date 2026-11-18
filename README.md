@@ -6,12 +6,14 @@ For a complete Ionic app setup combining iOS Native UI and Android Dynamic Color
 
 ## Individual guides
 
-### Use the plugin’s Native UI
+Choose the guide for the feature you need.
+
+### 1. Use the plugin’s Native UI
 
 The plugin renders supported Ionic and HTML controls natively on iOS. Your application keeps its state, routing and handlers.
 
-| Your app                             | Guide                                               |
-| ------------------------------------ | --------------------------------------------------- |
+| Your app                             | Guide                                                                                                       |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
 | Ionic with the standard iOS 27 theme | [Ionic setup](https://webview-native-ui.com/projects/capacitor-native-ui/docs/setup)                        |
 | Ionic with an existing Web theme     | [Existing-theme setup](https://webview-native-ui.com/projects/capacitor-native-ui/docs/ionic-vertical-bars) |
 | HTML without Ionic                   | [HTML setup](https://webview-native-ui.com/projects/capacitor-native-ui/docs/framework-independent)         |
@@ -20,11 +22,11 @@ The plugin renders supported Ionic and HTML controls natively on iOS. Your appli
 
 Native UI presents the original Web control natively while retaining its state and handlers. See [supported controls and projection behavior](https://webview-native-ui.com/projects/capacitor-native-ui/docs/native-ui).
 
-### Use Dynamic Color
+### 2. Use Dynamic Color
 
 Read Android’s device palette and apply it through your theme. Use the [Dynamic Color guide](https://webview-native-ui.com/projects/capacitor-native-ui/docs/dynamic-colors) for this feature on its own, appearance preferences and color mapping.
 
-### Build your own Native UI
+### 3. Build your own Native UI
 
 Render your own SwiftUI or Android Compose content through [app-local extensions](https://webview-native-ui.com/projects/capacitor-native-ui/docs/native-ui-extensions). This feature is experimental.
 
