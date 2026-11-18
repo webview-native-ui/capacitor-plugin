@@ -1,12 +1,12 @@
 # Capacitor Native UI
 
-Capacitor Native UI provides native controls, device colors and custom native content for WebView applications.
+Render supported Web controls natively on iOS, use the device palette on Android, or add custom SwiftUI and Compose views to a Capacitor app.
 
 For a complete Ionic app setup combining iOS Native UI and Android Dynamic Color, follow [WebView Native UI Standard setup](https://webview-native-ui.com/standard-setup).
 
 ## Individual guides
 
-### 1. Use the plugin’s Native UI
+### Use the plugin’s Native UI
 
 The plugin renders supported Ionic and HTML controls natively on iOS. Your application keeps its state, routing and handlers.
 
@@ -20,11 +20,11 @@ The plugin renders supported Ionic and HTML controls natively on iOS. Your appli
 
 Native UI presents the original Web control natively while retaining its state and handlers. See [supported controls and projection behavior](docs/native-ui.md).
 
-### 2. Use Dynamic Color
+### Use Dynamic Color
 
 Read Android’s device palette and apply it through your theme. Use the [Dynamic Color guide](docs/dynamic-colors.md) for this feature on its own, appearance preferences and color mapping.
 
-### 3. Build your own Native UI
+### Build your own Native UI
 
 Render your own SwiftUI or Android Compose content through [app-local extensions](docs/native-ui-extensions.md). This feature is experimental.
 

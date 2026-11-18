@@ -1,6 +1,6 @@
 # Set up Native UI in an Ionic app
 
-Install the packages, configure the theme, and start Native UI. Ordinary controls and **Vertical Bars are enabled by default**; the device determines whether a native rail is available.
+Use this guide for an Ionic app with Capacitor 8 and the iOS 27 theme. To keep your current theme, follow [Set up Vertical Bars with an existing theme](ionic-vertical-bars.md). Ordinary controls and **Vertical Bars are enabled by default**; the device determines whether a native rail is available.
 
 ## 1. Install the packages
 
@@ -8,7 +8,7 @@ Install the packages, configure the theme, and start Native UI. Ordinary control
 npm install @rdlabo/capacitor-native-ui @rdlabo/ionic-theme-ios27 @erkamyaman/capacitor-foldable
 ```
 
-Use an existing Ionic app with Capacitor 8 and an iOS project. The standard setup uses the iOS 27 theme preset and Foldable 8.5 or later within version 8.
+The iOS build requires an iOS project. This setup uses the iOS 27 theme preset and Foldable 8.5 or later within version 8.
 
 ## 2. Configure the theme
 
