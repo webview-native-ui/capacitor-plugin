@@ -275,10 +275,10 @@ Use `ionic.verticalBars.buttonProjection` to choose native button appearance.
 
 For native vertical `ion-button` and `ion-menu-button` actions, choose who controls appearance:
 
-| `buttonProjection`   | Appearance                                                                                                  |
-| -------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `'system'` (default) | SwiftUI styles the buttons and tints their icons. Ionic fill, colors and borders are not applied.           |
-| `'source'`           | Projects the supported Ionic fill and computed colors described in [Source fill rules](#source-fill-rules). |
+| `buttonProjection`   | Appearance                                                                                                            |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `'system'` (default) | SwiftUI supplies the glass background. An explicit Ionic `color` tints the action. Other actions use the system tint. |
+| `'source'`           | Projects the supported Ionic fill and computed colors described in [Source fill rules](#source-fill-rules).           |
 
 ```ts
 const rail = await enableNativeUI({ ionic: { verticalBars: { buttonProjection: 'source' } } });
