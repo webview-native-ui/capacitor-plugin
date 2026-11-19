@@ -22,6 +22,7 @@ final class NativeUIVerticalBarsModel: ObservableObject {
         let accessibilityLabel: String
         let image: UIImage?
         let clear: Bool
+        var foregroundTint: Color? = nil
         let background: Color?
         let borderColor: Color?
         let borderWidth: CGFloat
@@ -63,6 +64,9 @@ final class NativeUIVerticalBarsModel: ObservableObject {
                  // UIKit toolbar extraction uses the UIImage's rendering mode.
                  image: source.content.disabled ? image?.withRenderingMode(.alwaysTemplate) : image,
                  clear: source.content.buttonFill == .clear,
+                 foregroundTint: source.content.iconTemplate == true && source.content.buttonStyle != .prominent &&
+                     !source.content.disabled && source.content.color.hasPrefix("rgb")
+                     ? Color(uiColor: rendering.color(source.content.color)) : nil,
                  background: source.content.buttonStyle == .prominent
                      ? Color(uiColor: rendering.color(source.content.color))
                      : source.content.backgroundColor.map { Color(uiColor: rendering.color($0)) },
@@ -158,6 +162,8 @@ private func verticalBarsButton(_ item: NativeUIVerticalBarsModel.Item, model: N
         }
     if let background = item.background {
         button.buttonStyle(.glassProminent).tint(background)
+    } else if let tint = item.foregroundTint {
+        button.tint(tint)
     } else {
         button.overlay {
             if let borderColor = item.borderColor {

@@ -129,6 +129,20 @@ test.each([undefined, 'system'] as const)('projection %s ignores source styling 
   expect(candidate.actions.get('button-2')).toBe(disabled);
 });
 
+test('system glass follows explicit palette changes without projecting a solid fill', () => {
+  const button = mount(['solid']);
+  button.style.setProperty('--ion-color-primary-rgb', '12, 34, 56');
+  button.style.setProperty('--ion-color-danger-rgb', '210, 30, 40');
+  const read = () => readCandidate(button, () => 'button')!.control.items[0];
+  button.setAttribute('color', 'primary');
+  expect(read()).toMatchObject({ color: 'rgb(12, 34, 56)', iconTemplate: true });
+  expect(read().backgroundColor).toBeUndefined();
+  button.setAttribute('color', 'danger');
+  expect(read().color).toBe('rgb(210, 30, 40)');
+  button.removeAttribute('color');
+  expect(read().color).toBe('currentColor');
+});
+
 test('system is the default but retains default fill for local source overrides', async () => {
   const first = await enableVerticalControlArea();
   try {

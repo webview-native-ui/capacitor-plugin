@@ -101,6 +101,10 @@ export const appendItem = (
   const submit = isSolidSubmit(child, fill);
   const prominent = submit || child.getAttribute('data-native-ui') === 'button-submit';
   const buttonStyle = getComputedStyle(native ?? child);
+  const palette = child.getAttribute('color') || (child as HTMLIonButtonElement).color;
+  const paletteRGB =
+    systemButton && !prominent && palette ? getComputedStyle(child).getPropertyValue(`--ion-color-${palette}-rgb`).trim() : '';
+  const systemColor = paletteRGB ? `rgb(${paletteRGB})` : 'currentColor';
   const buttonFill =
     !systemButton &&
     isVerticalBarsSource(child) &&
@@ -125,7 +129,7 @@ export const appendItem = (
     selected: !!(child as ItemElement).selected,
     fontSize: parseFloat(labelStyle.fontSize),
     fontWeight: parseInt(labelStyle.fontWeight, 10) || 400,
-    color: submit ? buttonStyle.backgroundColor : systemButton && !prominent ? 'currentColor' : buttonStyle.color,
+    color: submit ? buttonStyle.backgroundColor : systemButton && !prominent ? systemColor : buttonStyle.color,
     iconTemplate: systemButton ? true : undefined,
     buttonFill,
     buttonStyle: prominent ? 'prominent' : undefined,
