@@ -32,6 +32,7 @@ class NativeUIController(
     private val context get() = activity
     private val handler = Handler(Looper.getMainLooper())
     private val snapshots by lazy { NativeUISnapshots(File(context.cacheDir, "native-ui-snapshots")) }
+    private var stopInteractions: (() -> Unit)? = null
     private var host: FrameLayout? = null
     private var revision = 0L
     private var sequence = 0L
@@ -53,7 +54,12 @@ class NativeUIController(
     }
 
     fun load() {
-        activity.runOnUiThread { webView.addOnLayoutChangeListener(layoutListener) }
+        activity.runOnUiThread {
+            webView.addOnLayoutChangeListener(layoutListener)
+            stopInteractions = snapshots.observeInteractions(activity.window) { event ->
+                notifyListeners("snapshotInteraction", event)
+            }
+        }
     }
 
     fun configure(call: NativeUICall) = onMain(call) {
@@ -114,10 +120,6 @@ class NativeUIController(
             val (node, content) = pair
             val entry = entries[id] ?: Entry(ComposeView(activity), node).also { entry ->
                 entry.view.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-                entry.clip.interaction = { active ->
-                    snapshots.interaction(active)
-                    notifyListeners("snapshotInteraction", JSONObject().put("active", active))
-                }
                 container.addView(entry.clip)
                 entry.view.setContent { entry.content.value?.invoke() }
                 entries[id] = entry
@@ -229,6 +231,8 @@ class NativeUIController(
         notifyListeners("webViewMetricsChange", JSONObject().put("radius", 0))
     }
     fun destroy() {
+        stopInteractions?.invoke()
+        stopInteractions = null
         webView.removeOnLayoutChangeListener(layoutListener)
         clearViews()
         snapshots.close()

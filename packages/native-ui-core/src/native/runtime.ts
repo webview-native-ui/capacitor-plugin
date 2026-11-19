@@ -752,6 +752,7 @@ export const createRuntime = async (
       return;
     }
     handoffInstant = tabSwitchHandoff || handoffAcrossPending || modalHandoff || win.performance.now() < handoffUntil;
+    let settledRevision: number | undefined;
     try {
       // A retained sync performs no update; keep the modal handoff armed so the
       // deferred retirement still runs instantly after the overlay releases.
@@ -1215,6 +1216,7 @@ export const createRuntime = async (
         // Sources that became ineligible must paint before their cover is removed.
         await painted();
       }
+      settledRevision = snapshot.revision;
     } catch (error) {
       await fail(error);
     } finally {
@@ -1228,7 +1230,15 @@ export const createRuntime = async (
       }
       handoffAcrossPending = false;
       if (updateQueue.waiting || !updateQueue.dirty || stopped) finishWaiters();
-      if (!stopped && !updateQueue.dirty && acceptedRevision === revision && !navigation.current && !verticalGesture) {
+      // List recycling may keep the queue dirty after an acknowledged handoff.
+      // Once its fade settles, that revision is ready for capture even then.
+      if (
+        !stopped &&
+        (!updateQueue.dirty || settledRevision === revision) &&
+        acceptedRevision === revision &&
+        !navigation.current &&
+        !verticalGesture
+      ) {
         projectionSurfaces.consider(acceptedRevision, acknowledged);
       }
     }
