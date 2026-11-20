@@ -82,6 +82,7 @@ export const createSearchSupport = (doc: Document, id: (element: Element) => str
     state.bar.querySelector('input.searchbar-input') === state.input;
   const install = (binding: NativeSearchBinding, bar: HTMLIonSearchbarElement, input: HTMLInputElement): SearchState => {
     const originalFocus = bar.setFocus;
+    const ownFocus = Object.getOwnPropertyDescriptor(bar, 'setFocus');
     const ownValue = Object.getOwnPropertyDescriptor(bar, 'value');
     let owner: object | null = bar;
     let value = ownValue;
@@ -90,7 +91,13 @@ export const createSearchSupport = (doc: Document, id: (element: Element) => str
       if (projected(binding) && (await requestNativeSearch(binding, true, true))) return;
       await originalFocus.call(bar);
     };
-    bar.setFocus = focus;
+    // Stencil's lazy loader exposes setFocus as a read-only prototype method.
+    const wrappedFocus = Reflect.defineProperty(bar, 'setFocus', {
+      configurable: ownFocus?.configurable ?? true,
+      enumerable: ownFocus?.enumerable ?? false,
+      writable: true,
+      value: focus,
+    });
     let wrapped: PropertyDescriptor | undefined;
     if (value?.get && value.set && ownValue?.configurable !== false) {
       const descriptor = value;
@@ -118,7 +125,10 @@ export const createSearchSupport = (doc: Document, id: (element: Element) => str
       valueVersion: 0,
       applyingInput: false,
       restore: () => {
-        if (bar.setFocus === focus) bar.setFocus = originalFocus;
+        if (wrappedFocus && Object.getOwnPropertyDescriptor(bar, 'setFocus')?.value === focus) {
+          if (ownFocus) Object.defineProperty(bar, 'setFocus', ownFocus);
+          else Reflect.deleteProperty(bar, 'setFocus');
+        }
         if (wrapped && Object.getOwnPropertyDescriptor(bar, 'value')?.set === wrapped.set) {
           if (ownValue) Object.defineProperty(bar, 'value', ownValue);
           else Reflect.deleteProperty(bar, 'value');
