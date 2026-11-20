@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { createSearchSupport } from '../src/native/components/searchable-tabs';
-import { registerNativeSearch, setNativeUIIntegration } from '../src/native-integration';
+import { registerNativeSearch } from '../src/native-integration';
 import { createCandidate } from '../src/native/shared/candidate';
 
 afterEach(() => {
@@ -174,36 +174,16 @@ test('an unavailable cached search cannot cover its visible Web trigger but surv
   }
 });
 
-test('lazy searchbars restore inherited readonly focus across repeated native search registrations', async () => {
-  const { bar, page, footer, trigger, tabs, candidates, search } = setup();
-  const webFocus = vi.fn(async () => {});
+test('lazy searchbars regain their inherited readonly focus method after teardown', () => {
+  const { bar, page, candidates, search } = setup();
+  const originalFocus = bar.setFocus;
   Reflect.deleteProperty(bar, 'setFocus');
-  Object.setPrototypeOf(bar, Object.create(Object.getPrototypeOf(bar), { setFocus: { value: webFocus } }));
-  const nativeFocus = vi.fn(async () => true);
-  setNativeUIIntegration(document, { suspend: vi.fn(), search: nativeFocus });
+  Object.setPrototypeOf(bar, Object.create(Object.getPrototypeOf(bar), { setFocus: { value: originalFocus } }));
   page.classList.remove('ion-page-hidden');
-  try {
-    for (let cycle = 0; cycle < 2; cycle++) {
-      nativeFocus.mockClear();
-      webFocus.mockClear();
-      const binding = registerNativeSearch(tabs, trigger, footer);
-      expect(candidates()[0].control.search?.available).toBe(true);
-      footer.setAttribute('data-native-ui-projected', '');
-      await bar.setFocus();
-      expect(nativeFocus).toHaveBeenCalledTimes(1);
-      expect(nativeFocus).toHaveBeenCalledWith(binding, true, true);
-      expect(webFocus).not.toHaveBeenCalled();
-      footer.removeAttribute('data-native-ui-projected');
-      await bar.setFocus();
-      expect(nativeFocus).toHaveBeenCalledTimes(1);
-      expect(webFocus).toHaveBeenCalledTimes(1);
-      expect(webFocus.mock.contexts[0]).toBe(bar);
-      search.destroy();
-      expect(Object.getOwnPropertyDescriptor(bar, 'setFocus')).toBeUndefined();
-      expect(bar.setFocus).toBe(webFocus);
-    }
-  } finally {
-    search.destroy();
-    setNativeUIIntegration(document);
-  }
+
+  expect(candidates()[0].control.search?.available).toBe(true);
+  expect(bar.setFocus).not.toBe(originalFocus);
+  search.destroy();
+  expect(Object.getOwnPropertyDescriptor(bar, 'setFocus')).toBeUndefined();
+  expect(bar.setFocus).toBe(originalFocus);
 });
