@@ -174,15 +174,17 @@ test('an unavailable cached search cannot cover its visible Web trigger but surv
   }
 });
 
-test('lazy searchbars regain their inherited readonly focus method after teardown', () => {
+test.each([false, true])('searchbar focus is restored after teardown (prototype writable: %s)', async (writable) => {
   const { bar, page, candidates, search } = setup();
-  const originalFocus = bar.setFocus;
+  const originalFocus = vi.fn(async () => {});
   Reflect.deleteProperty(bar, 'setFocus');
-  Object.setPrototypeOf(bar, Object.create(Object.getPrototypeOf(bar), { setFocus: { value: originalFocus } }));
+  Object.setPrototypeOf(bar, Object.create(Object.getPrototypeOf(bar), { setFocus: { value: originalFocus, writable } }));
   page.classList.remove('ion-page-hidden');
 
   expect(candidates()[0].control.search?.available).toBe(true);
   expect(bar.setFocus).not.toBe(originalFocus);
+  await bar.setFocus();
+  expect(originalFocus.mock.contexts[0]).toBe(bar);
   search.destroy();
   expect(Object.getOwnPropertyDescriptor(bar, 'setFocus')).toBeUndefined();
   expect(bar.setFocus).toBe(originalFocus);
