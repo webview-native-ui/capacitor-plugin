@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { createSearchSupport } from '../src/native/components/searchable-tabs';
-import { registerNativeSearch } from '../src/native-integration';
+import { registerNativeSearch, setNativeUIIntegration } from '../src/native-integration';
 import { createCandidate } from '../src/native/shared/candidate';
 
 afterEach(() => {
@@ -171,5 +171,33 @@ test('an unavailable cached search cannot cover its visible Web trigger but surv
     expect(candidates()[0].control.search?.available).toBe(true);
   } finally {
     search.destroy();
+  }
+});
+
+test('lazy searchbars restore inherited readonly focus across repeated native search registrations', async () => {
+  const { bar, page, footer, trigger, tabs, candidates, search } = setup();
+  const webFocus = vi.fn(async () => {});
+  Reflect.deleteProperty(bar, 'setFocus');
+  Object.setPrototypeOf(bar, Object.create(Object.getPrototypeOf(bar), { setFocus: { value: webFocus } }));
+  const nativeFocus = vi.fn(async () => true);
+  setNativeUIIntegration(document, { suspend: vi.fn(), search: nativeFocus });
+  page.classList.remove('ion-page-hidden');
+  try {
+    for (let cycle = 0; cycle < 2; cycle++) {
+      const binding = registerNativeSearch(tabs, trigger, footer);
+      expect(candidates()[0].control.search?.available).toBe(true);
+      footer.setAttribute('data-native-ui-projected', '');
+      await bar.setFocus();
+      expect(nativeFocus).toHaveBeenCalledWith(binding, true, true);
+      footer.removeAttribute('data-native-ui-projected');
+      await bar.setFocus();
+      expect(webFocus.mock.contexts.at(-1)).toBe(bar);
+      search.destroy();
+      expect(Object.getOwnPropertyDescriptor(bar, 'setFocus')).toBeUndefined();
+      expect(bar.setFocus).toBe(webFocus);
+    }
+  } finally {
+    search.destroy();
+    setNativeUIIntegration(document);
   }
 });
