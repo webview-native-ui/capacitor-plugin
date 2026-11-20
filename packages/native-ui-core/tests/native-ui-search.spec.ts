@@ -184,14 +184,20 @@ test('lazy searchbars restore inherited readonly focus across repeated native se
   page.classList.remove('ion-page-hidden');
   try {
     for (let cycle = 0; cycle < 2; cycle++) {
+      nativeFocus.mockClear();
+      webFocus.mockClear();
       const binding = registerNativeSearch(tabs, trigger, footer);
       expect(candidates()[0].control.search?.available).toBe(true);
       footer.setAttribute('data-native-ui-projected', '');
       await bar.setFocus();
+      expect(nativeFocus).toHaveBeenCalledTimes(1);
       expect(nativeFocus).toHaveBeenCalledWith(binding, true, true);
+      expect(webFocus).not.toHaveBeenCalled();
       footer.removeAttribute('data-native-ui-projected');
       await bar.setFocus();
-      expect(webFocus.mock.contexts.at(-1)).toBe(bar);
+      expect(nativeFocus).toHaveBeenCalledTimes(1);
+      expect(webFocus).toHaveBeenCalledTimes(1);
+      expect(webFocus.mock.contexts[0]).toBe(bar);
       search.destroy();
       expect(Object.getOwnPropertyDescriptor(bar, 'setFocus')).toBeUndefined();
       expect(bar.setFocus).toBe(webFocus);
