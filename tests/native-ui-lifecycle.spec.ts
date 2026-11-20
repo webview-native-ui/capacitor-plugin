@@ -58,9 +58,13 @@ test('a new activation survives the previous runtime finishing its destroy', asy
 
 test('standalone Vertical Bars forwards popover opt-in into the shared runtime', async () => {
   const handle = await enableVerticalControlArea({ ionic: { verticalBars: { popover: true } } });
-  await expect(enableNativeUI({ controls: 'verticalOnly', ionic: { verticalBars: { popover: true } } })).resolves.toBeDefined();
-  await expect(enableVerticalControlArea()).rejects.toThrow('different controls');
-  await handle.destroy();
+  const shared = await enableNativeUI({ controls: 'verticalOnly', ionic: { verticalBars: { popover: true } } });
+  try {
+    await expect(enableVerticalControlArea()).rejects.toThrow('different controls');
+  } finally {
+    await handle.destroy();
+  }
+  expect(shared.getStatus().state).toBe('stopped');
 });
 
 test('undefined optional controls preserve the same defaults as omitted settings', async () => {
